@@ -1,15 +1,16 @@
-package petgame.command;
+package petgame.command.impl;
 
+import petgame.command.PetCommand;
 import petgame.model.Pet;
 import petgame.record.PetSnapshot;
 
-public class FeedCommand implements PetCommand {
+public class PlayCommand implements PetCommand {
     private PetSnapshot previousState;
 
     @Override
     public void execute(Pet pet) {
         previousState = pet.snapshot();
-        pet.feed();
+        pet.play();
     }
 
     @Override
@@ -21,6 +22,6 @@ public class FeedCommand implements PetCommand {
 
     @Override
     public String getDescription() {
-        return "喂食";
+        return "玩耍";
     }
 }

@@ -1,7 +1,9 @@
-package petgame.command;
+package petgame.command.impl;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+
+import petgame.command.PetCommand;
 import petgame.model.Pet;
 
 public class CommandInvoker {
