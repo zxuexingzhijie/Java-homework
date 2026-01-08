@@ -3,9 +3,8 @@ package petgame.view;
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import javax.swing.JFrame;
-import javax.swing.JSplitPane;
-import javax.swing.Timer;
+import javax.swing.*;
+
 import petgame.controller.GameController;
 import petgame.model.Pet;
 
@@ -54,15 +53,15 @@ public class PetGameWindow extends JFrame {
         });
     }
 
-    private javax.swing.JPanel createTopPanel() {
-        javax.swing.JPanel top = new javax.swing.JPanel(new BorderLayout());
+    private JPanel createTopPanel() {
+        JPanel top = new JPanel(new BorderLayout());
         top.add(petSelectorPanel, BorderLayout.NORTH);
         top.add(statusPanel, BorderLayout.SOUTH);
         return top;
     }
 
-    private javax.swing.JPanel createCenterPanel() {
-        javax.swing.JPanel root = new javax.swing.JPanel(new BorderLayout());
+    private JPanel createCenterPanel() {
+        JPanel root = new JPanel(new BorderLayout());
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, petPanel, logPanel);
         splitPane.setResizeWeight(0.65);
         root.add(splitPane, BorderLayout.CENTER);
