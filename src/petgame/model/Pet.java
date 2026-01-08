@@ -2,6 +2,7 @@ package petgame.model;
 
 import petgame.enums.PetType;
 import petgame.model.behavior.PetBehaviorStrategy;
+import petgame.model.factory.PetFactory;
 import petgame.model.state.EvolvedState;
 import petgame.model.state.HealthyState;
 import petgame.model.state.PetState;
@@ -166,7 +167,7 @@ public class Pet {
         }
     }
 
-    private static petgame.model.behavior.PetBehaviorStrategy createBehaviorStrategyForType(petgame.enums.PetType type) {
-        return petgame.model.factory.PetFactory.createBehaviorStrategy(type);
+    private static PetBehaviorStrategy createBehaviorStrategyForType(petgame.enums.PetType type) {
+        return PetFactory.createBehaviorStrategy(type);
     }
 }
