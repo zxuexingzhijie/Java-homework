@@ -1,4 +1,4 @@
-package petgame.util;
+package petgame.observer.listeners;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -7,11 +7,9 @@ import petgame.observer.GameEvent;
 import petgame.observer.GameEventListener;
 import petgame.model.Pet;
 
-
-public class ActionLogger implements GameEventListener {
-
+public class LoggingListener implements GameEventListener {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
-
+    
     private final DefaultListModel<String> logModel = new DefaultListModel<>();
     private int feedCount;
     private int playCount;

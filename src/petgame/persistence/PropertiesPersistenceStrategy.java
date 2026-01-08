@@ -16,16 +16,12 @@ import petgame.model.Pet;
 import petgame.record.PetCollectionSnapshot;
 import petgame.record.PetSnapshot;
 
-
-public final class PetPersistence {
-
+public class PropertiesPersistenceStrategy implements PersistenceStrategy {
     private static final Path SAVE_FILE =
             Path.of(System.getProperty("user.home"), ".flying_pet_state.properties");
 
-    private PetPersistence() {
-    }
-
-    public static PetCollectionSnapshot loadCollection() {
+    @Override
+    public PetCollectionSnapshot loadCollection() {
         if (!Files.exists(SAVE_FILE)) {
             return new PetCollectionSnapshot(Collections.emptyList(), 0);
         }
@@ -55,7 +51,8 @@ public final class PetPersistence {
         }
     }
 
-    public static void saveAll(List<Pet> pets, int activeIndex) {
+    @Override
+    public void saveAll(List<Pet> pets, int activeIndex) {
         Properties properties = new Properties();
         properties.setProperty("pet.count", String.valueOf(pets.size()));
         properties.setProperty(
@@ -83,14 +80,6 @@ public final class PetPersistence {
         } catch (IOException ex) {
             System.err.println("无法保存宠物存档：" + ex.getMessage());
         }
-    }
-
-    public static List<Pet> fromSnapshots(List<PetSnapshot> snapshots) {
-        List<Pet> pets = new ArrayList<>();
-        for (PetSnapshot snapshot : snapshots) {
-            pets.add(petgame.model.factory.PetFactory.createFromSnapshot(snapshot));
-        }
-        return pets;
     }
 
     private static int readInt(Properties properties, String key, int defaultValue) {

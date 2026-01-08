@@ -1,8 +1,12 @@
 package petgame.model;
 
 import petgame.enums.PetType;
+import petgame.model.behavior.PetBehaviorStrategy;
+import petgame.model.state.EvolvedState;
+import petgame.model.state.HealthyState;
+import petgame.model.state.PetState;
+import petgame.model.state.SickState;
 import petgame.record.PetSnapshot;
-
 
 public class Pet {
 
@@ -11,20 +15,18 @@ public class Pet {
 
     private final PetType type;
     private String name;
-    private int hunger;
-    private int mood;
-    private int energy;
-    private int careProgress;
-    private int neglectCounter;
-    private boolean evolved;
-    private boolean sick;
+    private PetAttributes attributes;
+    private PetStatus status;
+    private final PetBehaviorStrategy behaviorStrategy;
+    private PetState currentState;
 
-    public Pet(PetType type, String name) {
-        this(type, name, type.getInitialHunger(), type.getInitialMood(), type.getInitialEnergy());
+    public Pet(PetType type, String name, PetBehaviorStrategy behaviorStrategy) {
+        this(type, name, type.getInitialHunger(), type.getInitialMood(), type.getInitialEnergy(), 
+                0, 0, false, false, behaviorStrategy);
     }
 
     public Pet(PetType type, String name, int hunger, int mood, int energy) {
-        this(type, name, hunger, mood, energy, 0, 0, false, false);
+        this(type, name, hunger, mood, energy, 0, 0, false, false, null);
     }
 
     public Pet(PetType type,
@@ -35,16 +37,15 @@ public class Pet {
             int careProgress,
             int neglectCounter,
             boolean evolved,
-            boolean sick) {
+            boolean sick,
+            PetBehaviorStrategy behaviorStrategy) {
         this.type = type;
         this.name = (name == null || name.isBlank()) ? type.getDefaultName() : name;
-        this.hunger = clamp(hunger);
-        this.mood = clamp(mood);
-        this.energy = clamp(energy);
-        this.careProgress = clampProgress(careProgress);
-        this.neglectCounter = clampProgress(neglectCounter);
-        this.evolved = evolved;
-        this.sick = sick;
+        this.attributes = new PetAttributes(hunger, mood, energy);
+        this.status = new PetStatus(careProgress, neglectCounter, evolved, sick);
+        this.behaviorStrategy = behaviorStrategy != null ? behaviorStrategy : 
+                createBehaviorStrategyForType(type);
+        updateState();
         evaluateWellbeing();
     }
 
@@ -63,77 +64,65 @@ public class Pet {
     }
 
     public int getHunger() {
-        return hunger;
+        return attributes.hunger();
     }
 
     public int getMood() {
-        return mood;
+        return attributes.mood();
     }
 
     public int getEnergy() {
-        return energy;
+        return attributes.energy();
     }
 
     public void feed() {
-        hunger = clamp(hunger + 18);
-        mood = clamp(mood + 4);
+        attributes = behaviorStrategy.feed(attributes);
         evaluateWellbeing();
     }
 
     public void play() {
-        mood = clamp(mood + 15);
-        energy = clamp(energy - 12);
-        hunger = clamp(hunger - 5);
+        attributes = behaviorStrategy.play(attributes);
         evaluateWellbeing();
     }
 
     public void sleep() {
-        energy = clamp(energy + 22);
-        mood = clamp(mood - 4);
-        hunger = clamp(hunger - 6);
+        attributes = behaviorStrategy.sleep(attributes);
         evaluateWellbeing();
     }
 
     public void tick() {
-        hunger = clamp(hunger - 3);
-        mood = clamp(mood - 2);
-        energy = clamp(energy - 2);
+        attributes = behaviorStrategy.tick(attributes);
         evaluateWellbeing();
     }
 
     public PetSnapshot snapshot() {
-        return new PetSnapshot(type, name, hunger, mood, energy, careProgress, neglectCounter, evolved, sick);
+        return new PetSnapshot(type, name, attributes.hunger(), attributes.mood(), 
+                attributes.energy(), status.careProgress(), status.neglectCounter(), 
+                status.evolved(), status.sick());
+    }
+
+    public void restoreFromSnapshot(PetSnapshot snapshot) {
+        this.name = snapshot.name();
+        this.attributes = new PetAttributes(snapshot.hunger(), snapshot.mood(), snapshot.energy());
+        this.status = new PetStatus(snapshot.careProgress(), snapshot.neglectCounter(), 
+                snapshot.evolved(), snapshot.sick());
+        updateState();
     }
 
     public String statusMessage() {
-        if (sick) {
-            return "我生病了，需要精心照顾…";
-        }
-        if (hunger < 20) {
-            return "我饿了，快喂我吧！";
-        }
-        if (mood < 20) {
-            return "好无聊，陪我玩！";
-        }
-        if (energy < 20) {
-            return "有点困，需要休息。";
-        }
-        if (evolved) {
-            return "力量觉醒，准备飞向更高的天空！";
-        }
-        return "精神饱满，想在天空飞翔！";
+        return currentState.getStatusMessage(attributes);
     }
 
     public boolean isHungry() {
-        return hunger < 30;
+        return attributes.hunger() < 30;
     }
 
     public boolean isSleepy() {
-        return energy < 30;
+        return attributes.energy() < 30;
     }
 
     public boolean isBored() {
-        return mood < 30;
+        return attributes.mood() < 30;
     }
 
     @Override
@@ -142,49 +131,42 @@ public class Pet {
     }
 
     public boolean isEvolved() {
-        return evolved;
+        return status.evolved();
     }
 
     public boolean isSick() {
-        return sick;
+        return status.sick();
     }
 
     public int getCareProgress() {
-        return careProgress;
+        return status.careProgress();
     }
 
     public int getNeglectCounter() {
-        return neglectCounter;
+        return status.neglectCounter();
     }
 
-    private int clamp(int value) {
-        return Math.max(MIN_VALUE, Math.min(MAX_VALUE, value));
-    }
-
-    private int clampProgress(int value) {
-        return Math.max(0, Math.min(200, value));
+    private void updateState() {
+        if (status.evolved()) {
+            currentState = new EvolvedState();
+        } else if (status.sick()) {
+            currentState = new SickState();
+        } else {
+            currentState = new HealthyState();
+        }
     }
 
     private void evaluateWellbeing() {
-        int sum = hunger + mood + energy;
-        if (sum >= 210) {
-            careProgress = clampProgress(careProgress + 5);
-            neglectCounter = clampProgress(neglectCounter - 6);
-            if (!evolved && careProgress >= 120) {
-                evolved = true;
-            }
-            if (sick && careProgress >= 80) {
-                sick = false;
-            }
-        } else if (sum <= 120) {
-            neglectCounter = clampProgress(neglectCounter + 6);
-            careProgress = clampProgress(careProgress - 4);
-            if (neglectCounter >= 90) {
-                sick = true;
-            }
-        } else {
-            careProgress = clampProgress(careProgress - 2);
-            neglectCounter = clampProgress(neglectCounter - 2);
+        PetStatus newStatus = currentState.evaluate(attributes, status);
+        boolean stateChanged = !newStatus.equals(status);
+        status = newStatus;
+        
+        if (stateChanged) {
+            updateState();
         }
+    }
+
+    private static petgame.model.behavior.PetBehaviorStrategy createBehaviorStrategyForType(petgame.enums.PetType type) {
+        return petgame.model.factory.PetFactory.createBehaviorStrategy(type);
     }
 }
