@@ -12,7 +12,7 @@ public class EvolvedState implements PetState {
         if (sum >= 210) {
             int newCareProgress = Math.min(200, currentStatus.careProgress() + 5);
             int newNeglectCounter = Math.max(0, currentStatus.neglectCounter() - 6);
-            boolean newSick = currentStatus.sick() && newCareProgress >= 80 ? false : currentStatus.sick();
+            boolean newSick = (!currentStatus.sick() || newCareProgress < 80) && currentStatus.sick();
             newStatus = new PetStatus(newCareProgress, newNeglectCounter, true, newSick);
         } else if (sum <= 120) {
             int newNeglectCounter = Math.min(200, currentStatus.neglectCounter() + 6);
